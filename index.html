@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模試タイマー</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Roboto+Mono:wght@500;700&display=swap');
+
+```
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    :root {
+        --bg-primary: #f5f1e8;
+        --bg-secondary: #2d3436;
+        --accent: #d63031;
+        --text-primary: #2d3436;
+        --text-light: #636e72;
+        --border: #dfe6e9;
+        --shadow: rgba(45, 52, 54, 0.15);
+    }
+    
+    body {
+        font-family: 'Noto Sans JP', sans-serif;
+        background: linear-gradient(135deg, #f5f1e8 0%, #e8e4d9 100%);
+        min-height: 100vh;
+        padding: 20px 15px;
+        color: var(--text-primary);
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .container {
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    
+    /* アナログ時計 */
+    .clock-container {
+        background: white;
+        border-radius: 20px;
+        padding: 30px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px var(--shadow);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .clock-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent), #ff7675);
+    }
+    
+    .clock {
+        width: 200px;
+        height: 200px;
+        margin: 0 auto;
+        position: relative;
+        border: 8px solid var(--bg-secondary);
+        border-radius: 50%;
+        background: white;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.1), 0 4px 15px var(--shadow);
+    }
+    
+    .clock-face {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+    
+    .clock-number {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+    
+    .clock-number span {
+        display: inline-block;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 8px;
+    }
+    
+    .hand {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        transform-origin: bottom center;
+        background: var(--bg-secondary);
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .hour-hand {
+        width: 6px;
+        height: 50px;
+        margin-left: -3px;
+        z-index: 3;
+        background: var(--bg-secondary);
+    }
+    
+    .minute-hand {
+        width: 4px;
+        height: 70px;
+        margin-left: -2px;
+        z-index: 4;
+        background: var(--text-primary);
+    }
+    
+    .second-hand {
+        width: 2px;
+        height: 80px;
+        margin-left: -1px;
+        z-index: 5;
+        background: var(--accent);
+    }
+    
+    .clock-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 12px;
+        height: 12px;
+        background: var(--accent);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 6;
+        box-shadow: 0 0 0 3px white;
+    }
+    
+    .digital-time {
+        text-align: center;
+        margin-top: 20px;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: 2px;
+    }
+    
+    /* スケジュール */
+    .schedule-container {
+        background: white;
+        border-radius: 20px;
+        padding: 25px 20px;
+        box-shadow: 0 10px 30px var(--shadow);
+    }
+    
+    .schedule-title {
+        font-size: 18px;
+        font-weight: 900;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+        text-align: center;
+        letter-spacing: 1px;
+    }
+    
+    .schedule-item {
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 12px;
+        background: var(--bg-primary);
+        border-left: 4px solid var(--border);
+        transition: all 0.3s ease;
+    }
+    
+    .schedule-item.active {
+        background: linear-gradient(135deg, #d63031 0%, #ff7675 100%);
+        color: white;
+        border-left-color: #c0392b;
+        box-shadow: 0 5px 20px rgba(214, 48, 49, 0.3);
+        transform: translateX(3px);
+    }
+    
+    .schedule-item.upcoming {
+        border-left-color: #f39c12;
+        background: #fef5e7;
+    }
+    
+    .schedule-item.completed {
+        opacity: 0.5;
+        border-left-color: #27ae60;
+    }
+    
+    .schedule-time {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        letter-spacing: 0.5px;
+    }
+    
+    .schedule-subject {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    
+    .schedule-item.active .schedule-time,
+    .schedule-item.active .schedule-subject {
+        color: white;
+    }
+    
+    .countdown {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 12px;
+        margin-top: 8px;
+        opacity: 0.8;
+    }
+    
+    /* 音声制御ボタン */
+    .controls {
+        text-align: center;
+        margin-top: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px var(--shadow);
+    }
+    
+    .sound-toggle {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-family: 'Noto Sans JP', sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(214, 48, 49, 0.3);
+    }
+    
+    .sound-toggle:active {
+        transform: scale(0.95);
+    }
+    
+    .sound-toggle.muted {
+        background: var(--text-light);
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .schedule-item.active {
+        animation: pulse 2s ease-in-out infinite;
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container">
+        <!-- アナログ時計 -->
+        <div class="clock-container">
+            <div class="clock">
+                <div class="clock-face" id="clockFace">
+                    <div class="hand hour-hand" id="hourHand"></div>
+                    <div class="hand minute-hand" id="minuteHand"></div>
+                    <div class="hand second-hand" id="secondHand"></div>
+                    <div class="clock-center"></div>
+                </div>
+            </div>
+            <div class="digital-time" id="digitalTime"></div>
+        </div>
+
+```
+    <!-- スケジュール -->
+    <div class="schedule-container">
+        <div class="schedule-title">📋 模試スケジュール</div>
+        <div id="scheduleList"></div>
+    </div>
+    
+    <!-- 音声制御 -->
+    <div class="controls">
+        <button class="sound-toggle" id="soundToggle">🔔 チャイム ON</button>
+    </div>
+</div>
+
+<script>
+    // Web Audio API でチャイムを生成
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioContext = null;
+    let isSoundEnabled = true;
+
+    function initAudio() {
+        if (!audioContext) {
+            audioContext = new AudioContext();
+        }
+    }
+
+    // 音階の周波数（ファラソド～ファソラファ～ラファソド～ドソラファ～）
+    const chimeNotes = [
+        { note: 'F4', freq: 349.23, duration: 0.3 },
+        { note: 'A4', freq: 440.00, duration: 0.3 },
+        { note: 'G4', freq: 392.00, duration: 0.3 },
+        { note: 'C4', freq: 261.63, duration: 0.6 },
+        
+        { note: 'F4', freq: 349.23, duration: 0.3 },
+        { note: 'G4', freq: 392.00, duration: 0.3 },
+        { note: 'A4', freq: 440.00, duration: 0.3 },
+        { note: 'F4', freq: 349.23, duration: 0.6 },
+        
+        { note: 'A4', freq: 440.00, duration: 0.3 },
+        { note: 'F4', freq: 349.23, duration: 0.3 },
+        { note: 'G4', freq: 392.00, duration: 0.3 },
+        { note: 'C4', freq: 261.63, duration: 0.6 },
+        
+        { note: 'C4', freq: 261.63, duration: 0.3 },
+        { note: 'G4', freq: 392.00, duration: 0.3 },
+        { note: 'A4', freq: 440.00, duration: 0.3 },
+        { note: 'F4', freq: 349.23, duration: 0.6 }
+    ];
+
+    function playChime() {
+        if (!isSoundEnabled) return;
+        
+        initAudio();
+        
+        let currentTime = audioContext.currentTime;
+        
+        chimeNotes.forEach(({ freq, duration }) => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = freq;
+            oscillator.type = 'sine';
+            
+            // エンベロープ
+            gainNode.gain.setValueAtTime(0, currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
+            
+            oscillator.start(currentTime);
+            oscillator.stop(currentTime + duration);
+            
+            currentTime += duration + 0.05;
+        });
+    }
+
+    // スケジュールデータ
+    const schedule = [
+        { start: '09:20', end: '10:10', subject: '英語', type: 'exam', warningTime: '09:15' },
+        { start: '10:30', end: '11:20', subject: '国語', type: 'exam', warningTime: '10:25' },
+        { start: '11:40', end: '12:30', subject: '数学', type: 'exam', warningTime: '11:35' },
+        { start: '13:20', end: '14:10', subject: '理科', type: 'exam', warningTime: '13:15' },
+        { start: '14:30', end: '15:20', subject: '社会', type: 'exam', warningTime: '14:25' }
+    ];
+
+    // 時刻をミリ秒に変換
+    function timeToMs(timeStr) {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 * 60 * 1000 + minutes * 60 * 1000;
+    }
+
+    // 現在時刻のミリ秒（時分のみ）
+    function getCurrentTimeMs() {
+        const now = new Date();
+        return now.getHours() * 60 * 60 * 1000 + now.getMinutes() * 60 * 1000 + now.getSeconds() * 1000;
+    }
+
+    // チャイムを鳴らした時刻を記録
+    const playedChimes = new Set();
+
+    function checkAndPlayChime() {
+        const now = new Date();
+        const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        
+        schedule.forEach(item => {
+            // 開始時刻のチャイム
+            if (currentTimeStr === item.start && !playedChimes.has(`start-${item.start}`)) {
+                playChime();
+                playedChimes.add(`start-${item.start}`);
+                console.log(`チャイム: ${item.subject} 開始`);
+            }
+            
+            // 終了時刻のチャイム
+            if (currentTimeStr === item.end && !playedChimes.has(`end-${item.end}`)) {
+                playChime();
+                playedChimes.add(`end-${item.end}`);
+                console.log(`チャイム: ${item.subject} 終了`);
+            }
+            
+            // 予鈴のチャイム
+            if (item.warningTime && currentTimeStr === item.warningTime && !playedChimes.has(`warning-${item.warningTime}`)) {
+                playChime();
+                playedChimes.add(`warning-${item.warningTime}`);
+                console.log(`チャイム: ${item.subject} 予鈴`);
+            }
+        });
+    }
+
+    // アナログ時計の更新
+    function updateClock() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const seconds = now.getSeconds();
+        
+        const hourDeg = (hours % 12) * 30 + minutes * 0.5;
+        const minuteDeg = minutes * 6;
+        const secondDeg = seconds * 6;
+        
+        document.getElementById('hourHand').style.transform = `rotate(${hourDeg}deg)`;
+        document.getElementById('minuteHand').style.transform = `rotate(${minuteDeg}deg)`;
+        document.getElementById('secondHand').style.transform = `rotate(${secondDeg}deg)`;
+        
+        // デジタル時計
+        const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        document.getElementById('digitalTime').textContent = timeStr;
+    }
+
+    // 時計の文字盤に数字を追加
+    function setupClockFace() {
+        const clockFace = document.getElementById('clockFace');
+        for (let i = 1; i <= 12; i++) {
+            const numberDiv = document.createElement('div');
+            numberDiv.className = 'clock-number';
+            numberDiv.style.transform = `rotate(${i * 30}deg)`;
+            const span = document.createElement('span');
+            span.textContent = i;
+            span.style.transform = `rotate(${-i * 30}deg)`;
+            numberDiv.appendChild(span);
+            clockFace.appendChild(numberDiv);
+        }
+    }
+
+    // スケジュール表示の更新
+    function updateSchedule() {
+        const currentMs = getCurrentTimeMs();
+        const scheduleList = document.getElementById('scheduleList');
+        scheduleList.innerHTML = '';
+        
+        // スケジュールアイテムを作成し、現在進行中のものを先頭に配置
+        const scheduleItems = [];
+        
+        schedule.forEach((item, index) => {
+            const startMs = timeToMs(item.start);
+            const endMs = timeToMs(item.end);
+            
+            const div = document.createElement('div');
+            div.className = 'schedule-item';
+            
+            let isActive = false;
+            let isUpcoming = false;
+            let isCompleted = false;
+            
+            // 状態を判定
+            if (currentMs >= startMs && currentMs < endMs) {
+                div.classList.add('active');
+                isActive = true;
+                const remaining = Math.floor((endMs - currentMs) / 1000);
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                div.innerHTML = `
+                    <div class="schedule-time">${item.start} ～ ${item.end}</div>
+                    <div class="schedule-subject">${item.subject}</div>
+                    <div class="countdown">残り ${mins}分${secs}秒</div>
+                `;
+            } else if (currentMs < startMs) {
+                if (index === 0 || currentMs >= timeToMs(schedule[index - 1].end)) {
+                    div.classList.add('upcoming');
+                    isUpcoming = true;
+                }
+                div.innerHTML = `
+                    <div class="schedule-time">${item.start} ～ ${item.end}</div>
+                    <div class="schedule-subject">${item.subject}</div>
+                `;
+            } else {
+                div.classList.add('completed');
+                isCompleted = true;
+                div.innerHTML = `
+                    <div class="schedule-time">${item.start} ～ ${item.end}</div>
+                    <div class="schedule-subject">${item.subject}</div>
+                `;
+            }
+            
+            // 優先順位を付けて配列に追加（現在進行中 > 次の科目 > その他）
+            scheduleItems.push({
+                element: div,
+                priority: isActive ? 0 : (isUpcoming ? 1 : 2),
+                originalIndex: index
+            });
+        });
+        
+        // 優先順位でソートし、同じ優先順位なら元の順序を保つ
+        scheduleItems.sort((a, b) => {
+            if (a.priority !== b.priority) {
+                return a.priority - b.priority;
+            }
+            return a.originalIndex - b.originalIndex;
+        });
+        
+        // ソート済みのアイテムを表示
+        scheduleItems.forEach(item => {
+            scheduleList.appendChild(item.element);
+        });
+    }
+
+    // 音声トグル
+    document.getElementById('soundToggle').addEventListener('click', function() {
+        isSoundEnabled = !isSoundEnabled;
+        this.textContent = isSoundEnabled ? '🔔 チャイム ON' : '🔇 チャイム OFF';
+        this.classList.toggle('muted', !isSoundEnabled);
+        
+        if (isSoundEnabled) {
+            initAudio();
+        }
+    });
+
+    // 初期化
+    setupClockFace();
+    updateClock();
+    updateSchedule();
+
+    // 定期更新
+    setInterval(() => {
+        updateClock();
+        updateSchedule();
+        checkAndPlayChime();
+    }, 1000);
+
+    // 初回音声コンテキスト初期化（ユーザー操作後）
+    document.addEventListener('click', initAudio, { once: true });
+
+    // Ctrl+Aでチャイムを鳴らす
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'a') {
+            e.preventDefault(); // 全選択を防ぐ
+            initAudio();
+            playChime();
+            console.log('手動チャイム再生');
+        }
+    });
+</script>
+```
+
+</body>
+</html>
